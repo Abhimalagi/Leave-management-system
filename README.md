@@ -3,7 +3,7 @@
 A **frontend-only** Leave Management System built with HTML, CSS, and JavaScript. This project simulates a complete leave management workflow with separate interfaces for employees and employers.
 
 ## 🎯 Live Demo
-[Click here to view the live website](https://.github.io/leave-management-system)
+[Click here to view the live website](https://abhimalagi.github.io/Leave-management-system/)
 
 
 ## ✨ Features
