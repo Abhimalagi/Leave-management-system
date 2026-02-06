@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>👤 Employee Dashboard</h1>
+            <div class="header-actions">
+                <span>Welcome, Employee!</span>
+                <button class="btn btn-small" onclick="goToHome()">← Back to Home</button>
+            </div>
+        </header>
+
+        <!-- Leave Application Form -->
+        <section class="card">
+            <h2>➕ Apply for Leave</h2>
+            <form id="leaveForm">
+                <div class="form-group">
+                    <label for="employeeNameInput">Your Name *</label>
+                    <input type="text" id="employeeNameInput" placeholder="Enter your full name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="leaveType">Leave Type *</label>
+                    <select id="leaveType" required>
+                        <option value="">Select Type</option>
+                        <option value="Sick">Sick Leave</option>
+                        <option value="Casual">Casual Leave</option>
+                        <option value="Paid">Paid Leave</option>
+                        <option value="Emergency">Emergency Leave</option>
+                    </select>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="fromDate">From Date *</label>
+                        <input type="date" id="fromDate" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="toDate">To Date *</label>
+                        <input type="date" id="toDate" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="reason">Reason *</label>
+                    <textarea id="reason" rows="3" placeholder="Brief reason for leave..." required></textarea>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Apply for Leave</button>
+                <button type="reset" class="btn btn-outline">Clear Form</button>
+            </form>
+        </section>
+
+        <!-- Leave Requests Table -->
+        <section class="card">
+            <h2>📋 All Leave Requests</h2>
+            
+            <!-- Filter by name -->
+            <div class="filter-section" style="margin-bottom: 20px;">
+                <label for="filterName">View leaves for:</label>
+                <div style="display: flex; gap: 10px; margin-top: 8px;">
+                    <input type="text" id="filterName" placeholder="Enter employee name to filter" style="flex: 1;">
+                    <button class="btn btn-small" onclick="filterLeaves()">Filter</button>
+                    <button class="btn btn-small btn-outline" onclick="showAllLeaves()">Show All</button>
+                </div>
+            </div>
+            
+            <div class="table-container">
+                <table id="leaveTable">
+                    <thead>
+                        <tr>
+                            <th>Employee Name</th>
+                            <th>Leave Type</th>
+                            <th>From Date</th>
+                            <th>To Date</th>
+                            <th>Reason</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Leave requests will be loaded here -->
+                    </tbody>
+                </table>
+                <p id="noLeavesMessage" class="empty-message">No leave requests found.</p>
+            </div>
+        </section>
+    
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        // Set today's date as default
+        document.getElementById('fromDate').valueAsDate = new Date();
+        let tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        document.getElementById('toDate').valueAsDate = tomorrow;
+        
+        // Load all leaves initially
+        loadAllLeaves();
+        
+        // Handle form submission
+        document.getElementById('leaveForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const employeeName = document.getElementById('employeeNameInput').value.trim();
+            const leaveType = document.getElementById('leaveType').value;
+            const fromDate = document.getElementById('fromDate').value;
+            const toDate = document.getElementById('toDate').value;
+            const reason = document.getElementById('reason').value.trim();
+            
+            // Validation
+            if (!employeeName || !leaveType || !fromDate || !toDate || !reason) {
+                alert('Please fill all required fields (*)');
+                return;
+            }
+            
+            if (new Date(fromDate) > new Date(toDate)) {
+                alert('From date cannot be after To date');
+                return;
+            }
+            
+            // Create leave object
+            const leave = {
+                id: Date.now(), // Simple unique ID
+                employeeName: employeeName,
+                leaveType: leaveType,
+                fromDate: fromDate,
+                toDate: toDate,
+                reason: reason,
+                status: 'Pending'
+            };
+            
+            // Save to localStorage
+            saveLeave(leave);
+            
+            // Reload table
+            loadAllLeaves();
+            
+            // Reset form (but keep the name for convenience)
+            const nameToKeep = employeeName;
+            document.getElementById('leaveForm').reset();
+            document.getElementById('employeeNameInput').value = nameToKeep;
+            document.getElementById('fromDate').valueAsDate = new Date();
+            tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            document.getElementById('toDate').valueAsDate = tomorrow;
+            
+            alert('Leave application submitted successfully!');
+        });
+        
+        // Load all leaves for the table
+        function loadAllLeaves() {
+            const leaves = getLeaves();
+            const tableBody = document.querySelector('#leaveTable tbody');
+            const noLeavesMessage = document.getElementById('noLeavesMessage');
+            
+            if (leaves.length === 0) {
+                tableBody.innerHTML = '';
+                noLeavesMessage.style.display = 'block';
+                return;
+            }
+            
+            noLeavesMessage.style.display = 'none';
+            
+            let html = '';
+            leaves.forEach(leave => {
+                // Status badge styling
+                let statusClass = 'status-pending';
+                if (leave.status === 'Approved') statusClass = 'status-approved';
+                if (leave.status === 'Rejected') statusClass = 'status-rejected';
+                
+                html += `
+                    <tr>
+                        <td>${leave.employeeName}</td>
+                        <td>${leave.leaveType}</td>
+                        <td>${formatDate(leave.fromDate)}</td>
+                        <td>${formatDate(leave.toDate)}</td>
+                        <td>${leave.reason}</td>
+                        <td><span class="status-badge ${statusClass}">${leave.status}</span></td>
+                    </tr>
+                `;
+            });
+            
+            tableBody.innerHTML = html;
+        }
+        
+        // Filter leaves by employee name
+        function filterLeaves() {
+            const filterName = document.getElementById('filterName').value.trim().toLowerCase();
+            const leaves = getLeaves();
+            const tableBody = document.querySelector('#leaveTable tbody');
+            const noLeavesMessage = document.getElementById('noLeavesMessage');
+            
+            if (!filterName) {
+                loadAllLeaves();
+                return;
+            }
+            
+            const filteredLeaves = leaves.filter(leave => 
+                leave.employeeName.toLowerCase().includes(filterName)
+            );
+            
+            if (filteredLeaves.length === 0) {
+                tableBody.innerHTML = '';
+                noLeavesMessage.style.display = 'block';
+                noLeavesMessage.textContent = `No leave requests found for "${filterName}"`;
+                return;
+            }
+            
+            noLeavesMessage.style.display = 'none';
+            
+            let html = '';
+            filteredLeaves.forEach(leave => {
+                let statusClass = 'status-pending';
+                if (leave.status === 'Approved') statusClass = 'status-approved';
+                if (leave.status === 'Rejected') statusClass = 'status-rejected';
+                
+                html += `
+                    <tr>
+                        <td>${leave.employeeName}</td>
+                        <td>${leave.leaveType}</td>
+                        <td>${formatDate(leave.fromDate)}</td>
+                        <td>${formatDate(leave.toDate)}</td>
+                        <td>${leave.reason}</td>
+                        <td><span class="status-badge ${statusClass}">${leave.status}</span></td>
+                    </tr>
+                `;
+            });
+            
+            tableBody.innerHTML = html;
+        }
+        
+        // Show all leaves
+        function showAllLeaves() {
+            document.getElementById('filterName').value = '';
+            loadAllLeaves();
+        }
+        
+        function goToHome() {
+            window.location.href = "index.html";
+        }
+        
+        // Allow Enter key to filter
+        document.getElementById('filterName').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                filterLeaves();
+            }
+        });
+    </script>
+</body>
+</html>

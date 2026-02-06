@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employer Login</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="login-container">
+            <div class="login-card">
+                <h1>👔 Employer Login</h1>
+                <p class="subtitle">Enter password to access employer dashboard</p>
+                
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" placeholder="Enter password" required>
+                        
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-block">Login</button>
+                    
+                    <div class="login-actions">
+                        <button type="button" class="btn btn-outline btn-block" onclick="goToHome()">
+                            ← Back to Home
+                        </button>
+                    </div>
+                </form>
+                
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const password = document.getElementById('password').value;
+            const correctPassword = "admin123"; // Simple demo password
+            
+            if (password === correctPassword) {
+                // Store login status in localStorage
+                localStorage.setItem('employerLoggedIn', 'true');
+                localStorage.setItem('loginTime', Date.now());
+                
+                // Redirect to employer dashboard
+                window.location.href = "employer.html";
+            } else {
+                alert("Incorrect password! Try 'admin123' for demo.");
+                document.getElementById('password').value = '';
+                document.getElementById('password').focus();
+            }
+        });
+        
+        function goToHome() {
+            window.location.href = "index.html";
+        }
+        
+        // Auto-focus on password field
+        document.getElementById('password').focus();
+    </script>
+</body>
+</html>

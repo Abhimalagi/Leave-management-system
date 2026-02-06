@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leave Management System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>📋 Leave Management System</h1>
+        <p class="subtitle">Select your role to continue</p>
+        
+        <div class="role-selection">
+            <div class="role-card" onclick="goToEmployee()">
+                <div class="role-icon">👤</div>
+                <h3>Employee</h3>
+                <p>Apply for leave and track status</p>
+                <button class="btn btn-primary">Continue as Employee</button>
+            </div>
+            
+            <div class="role-card" onclick="goToEmployerLogin()">
+                <div class="role-icon">👔</div>
+                <h3>Employer</h3>
+                <p>Review and manage leave requests</p>
+                <button class="btn btn-secondary">Employer Login</button>
+            </div>
+        </div>
+        
+    </div>
+
+    <script>
+        function goToEmployee() {
+            window.location.href = "employee.html";
+        }
+        
+        function goToEmployerLogin() {
+            window.location.href = "employer-login.html";
+        }
+    </script>
+</body>
+</html>

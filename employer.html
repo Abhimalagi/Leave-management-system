@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employer Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>👔 Employer Dashboard</h1>
+            <div class="header-actions">
+                <span>Manager Access</span>
+                <button class="btn btn-small" onclick="logout()">Logout</button>
+                <button class="btn btn-small btn-outline" onclick="goToHome()">Home</button>
+            </div>
+        </header>
+
+        <!-- Check if logged in -->
+        <div id="loginCheck" style="display: none;">
+            <!-- Login check will happen here -->
+        </div>
+
+        <!-- Main content (shown only when logged in) -->
+        <div id="dashboardContent">
+            <!-- Statistics -->
+            <div class="stats-container">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalRequests">0</div>
+                    <div class="stat-label">Total Requests</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="pendingRequests">0</div>
+                    <div class="stat-label">Pending</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="approvedRequests">0</div>
+                    <div class="stat-label">Approved</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="rejectedRequests">0</div>
+                    <div class="stat-label">Rejected</div>
+                </div>
+            </div>
+
+            <!-- Leave Requests Table -->
+            <section class="card">
+                <h2>📋 All Leave Requests</h2>
+                <div class="table-container">
+                    <table id="leaveTable">
+                        <thead>
+                            <tr>
+                                <th>Employee Name</th>
+                                <th>Leave Type</th>
+                                <th>Dates</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Leave requests will be loaded here -->
+                        </tbody>
+                    </table>
+                    <p id="noLeavesMessage" class="empty-message">No leave requests found.</p>
+                </div>
+            </section>
+            
+            <div class="demo-note">
+                <p>💡 <strong>Note:</strong> Click Approve/Reject to update leave status. Employee will see the updated status.</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        // Check if employer is logged in
+        function checkLogin() {
+            const isLoggedIn = localStorage.getItem('employerLoggedIn') === 'true';
+            const loginTime = parseInt(localStorage.getItem('loginTime') || 0);
+            const currentTime = Date.now();
+            const sessionDuration = 30 * 60 * 1000; // 30 minutes session
+            
+            if (!isLoggedIn || (currentTime - loginTime) > sessionDuration) {
+                // Not logged in or session expired
+                localStorage.removeItem('employerLoggedIn');
+                localStorage.removeItem('loginTime');
+                
+                // Redirect to login page
+                window.location.href = "employer-login.html";
+                return false;
+            }
+            
+            return true;
+        }
+        
+        // Load dashboard if logged in
+        if (checkLogin()) {
+            document.getElementById('dashboardContent').style.display = 'block';
+            loadAllLeaves();
+        } else {
+            document.getElementById('dashboardContent').style.display = 'none';
+        }
+        
+        function loadAllLeaves() {
+            const leaves = getLeaves();
+            const tableBody = document.querySelector('#leaveTable tbody');
+            const noLeavesMessage = document.getElementById('noLeavesMessage');
+            
+            // Update statistics
+            updateStatistics(leaves);
+            
+            if (leaves.length === 0) {
+                tableBody.innerHTML = '';
+                noLeavesMessage.style.display = 'block';
+                return;
+            }
+            
+            noLeavesMessage.style.display = 'none';
+            
+            let html = '';
+            leaves.forEach(leave => {
+                // Status badge styling
+                let statusClass = 'status-pending';
+                if (leave.status === 'Approved') statusClass = 'status-approved';
+                if (leave.status === 'Rejected') statusClass = 'status-rejected';
+                
+                // Action buttons (only show for pending requests)
+                let actionButtons = '';
+                if (leave.status === 'Pending') {
+                    actionButtons = `
+                        <div class="action-buttons">
+                            <button class="btn btn-success btn-small" onclick="approveLeave(${leave.id})">Approve</button>
+                            <button class="btn btn-danger btn-small" onclick="rejectLeave(${leave.id})">Reject</button>
+                        </div>
+                    `;
+                } else {
+                    actionButtons = '<span class="text-muted">Action taken</span>';
+                }
+                
+                html += `
+                    <tr>
+                        <td>${leave.employeeName}</td>
+                        <td>${leave.leaveType}</td>
+                        <td>${formatDate(leave.fromDate)} to ${formatDate(leave.toDate)}</td>
+                        <td>${leave.reason}</td>
+                        <td><span class="status-badge ${statusClass}">${leave.status}</span></td>
+                        <td>${actionButtons}</td>
+                    </tr>
+                `;
+            });
+            
+            tableBody.innerHTML = html;
+        }
+        
+        function updateStatistics(leaves) {
+            document.getElementById('totalRequests').textContent = leaves.length;
+            
+            const pending = leaves.filter(leave => leave.status === 'Pending').length;
+            const approved = leaves.filter(leave => leave.status === 'Approved').length;
+            const rejected = leaves.filter(leave => leave.status === 'Rejected').length;
+            
+            document.getElementById('pendingRequests').textContent = pending;
+            document.getElementById('approvedRequests').textContent = approved;
+            document.getElementById('rejectedRequests').textContent = rejected;
+        }
+        
+        function approveLeave(id) {
+            updateLeaveStatus(id, 'Approved');
+            loadAllLeaves();
+            alert('Leave approved successfully!');
+        }
+        
+        function rejectLeave(id) {
+            updateLeaveStatus(id, 'Rejected');
+            loadAllLeaves();
+            alert('Leave rejected!');
+        }
+        
+        function logout() {
+            localStorage.removeItem('employerLoggedIn');
+            localStorage.removeItem('loginTime');
+            window.location.href = "employer-login.html";
+        }
+        
+        function goToHome() {
+            window.location.href = "index.html";
+        }
+        
+        // Auto-logout after 30 minutes of inactivity
+        let inactivityTimer;
+        function resetInactivityTimer() {
+            clearTimeout(inactivityTimer);
+            inactivityTimer = setTimeout(logout, 30 * 60 * 1000); // 30 minutes
+        }
+        
+        // Reset timer on user activity
+        document.addEventListener('mousemove', resetInactivityTimer);
+        document.addEventListener('keypress', resetInactivityTimer);
+        resetInactivityTimer();
+    </script>
+</body>
+</html>
